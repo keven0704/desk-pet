@@ -1,0 +1,10 @@
+node_modules/
+backend/.env
+backend/__pycache__/
+# 后端打包产物（用 build-backend.bat 生成，不进版本库）
+backend/build/
+backend/dist/
+backend/*.spec
+# 对外发布的整包（用 打包给别人.bat 生成）
+release/
+

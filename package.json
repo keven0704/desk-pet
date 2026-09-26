@@ -1,0 +1,25 @@
+{
+  "name": "desk-pet",
+  "version": "1.1.0",
+  "description": "一个能看屏幕、能引导操作的桌宠",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test:pet": "electron .pet-test.js",
+    "test:chat": "electron .chat-test.js",
+    "test:mic": "electron .mic-levels.js",
+    "test:wake": "electron .mic-test.js",
+    "backend": "python backend/main.py",
+    "build:backend": "python -m PyInstaller --noconfirm --onefile --name deskpet-backend --distpath backend --workpath backend/build --specpath backend/build --collect-all uvicorn --collect-all websockets --collect-all httpx --collect-all certifi --hidden-import uvicorn.protocols.websockets.websockets_impl backend/main.py"
+  },
+  "keywords": [
+    "electron",
+    "desktop-pet"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^44.4.5",
+    "ws": "^8.21.3"
+  }
+}

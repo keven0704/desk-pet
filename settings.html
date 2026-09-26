@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>API 设置</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      color: #333;
+      background: #fafafa;
+      padding: 18px 20px;
+    }
+    h2 { margin: 0 0 4px; font-size: 16px; }
+    .tip { color: #888; margin: 0 0 16px; font-size: 12px; }
+    .field { margin-bottom: 14px; }
+    label { display: block; margin-bottom: 5px; font-weight: 600; }
+    select, input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fff;
+      outline: none;
+    }
+    select:focus, input:focus { border-color: #4a90d9; }
+    .hint { color: #999; font-size: 11px; margin-top: 4px; }
+    .hidden { display: none; }
+    .btns {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    button {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    #save-btn { background: #4a90d9; color: #fff; }
+    #save-btn:hover { background: #3a7fc4; }
+    #cancel-btn { background: #e8e8e8; color: #555; }
+    #cancel-btn:hover { background: #dcdcdc; }
+    #msg { color: #2a9d4a; font-size: 12px; margin-left: auto; align-self: center; }
+    hr.sep { border: none; border-top: 1px solid #e6e6e6; margin: 18px 0 14px; }
+  </style>
+</head>
+<body>
+  <h2>API 设置</h2>
+  <p class="tip">选择服务商并填入你的 API Key，保存后立即生效（无需重启）。</p>
+
+  <div class="field">
+    <label for="provider">服务商</label>
+    <select id="provider">
+      <option value="glm">智谱 GLM（glm-4v-flash 免费）</option>
+      <option value="openai">OpenAI（gpt-4o-mini）</option>
+      <option value="siliconflow">硅基流动（Qwen2.5-VL）</option>
+      <option value="custom">自定义（OpenAI 兼容接口）</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label for="api-key">API Key</label>
+    <input id="api-key" type="password" placeholder="粘贴你的 API Key" autocomplete="off">
+    <div class="hint" id="key-hint"></div>
+  </div>
+
+  <div class="field hidden" id="url-field">
+    <label for="api-url">接口地址</label>
+    <input id="api-url" type="text" placeholder="https://example.com/v1/chat/completions">
+    <div class="hint">OpenAI 兼容的 chat/completions 完整地址</div>
+  </div>
+
+  <div class="field">
+    <label for="model">模型名（可选，留空用默认）</label>
+    <input id="model" type="text" placeholder="如 glm-4v-flash / gpt-4o-mini">
+  </div>
+
+  <hr class="sep">
+
+  <h2>噜噜的闲聊</h2>
+  <p class="tip">右键桌宠 →「和噜噜聊天…」时用得上。两项都留空也能聊，填了更贴合你。</p>
+
+  <div class="field">
+    <label for="city">我所在的城市（可选）</label>
+    <input id="city" type="text" placeholder="如：杭州">
+    <div class="hint">填了之后问「今天天气怎么样」就能查到实时天气（不填它只能反问你在哪个城市）</div>
+  </div>
+
+  <div class="field">
+    <label for="chat-model">闲聊模型（可选，留空用默认）</label>
+    <input id="chat-model" type="text" placeholder="如 glm-4-flash">
+    <div class="hint" id="chat-hint"></div>
+  </div>
+
+  <hr class="sep">
+
+  <h2>语音识别</h2>
+  <p class="tip">语音唤醒「噜噜」和 🎤 语音输入都用它。留空「跟随主服务商」。</p>
+
+  <div class="field">
+    <label for="asr-provider">语音识别服务商</label>
+    <select id="asr-provider">
+      <option value="">跟随主服务商（默认）</option>
+      <option value="siliconflow">硅基流动 SenseVoiceSmall（免费，推荐）</option>
+      <option value="glm">智谱 glm-asr（需账户余额）</option>
+      <option value="openai">OpenAI whisper-1</option>
+      <option value="custom">自定义（OpenAI 兼容 audio/transcriptions）</option>
+    </select>
+    <div class="hint" id="asr-hint"></div>
+  </div>
+
+  <div class="field">
+    <label for="asr-key">语音识别 API Key（可选）</label>
+    <input id="asr-key" type="password" placeholder="留空则复用上面的 API Key" autocomplete="off">
+  </div>
+
+  <div class="field hidden" id="asr-url-field">
+    <label for="asr-url">语音识别接口地址（可选）</label>
+    <input id="asr-url" type="text" placeholder="https://example.com/v1/audio/transcriptions">
+  </div>
+
+  <div class="field">
+    <label for="asr-model">语音识别模型名（可选）</label>
+    <input id="asr-model" type="text" placeholder="如 FunAudioLLM/SenseVoiceSmall">
+  </div>
+
+  <div class="btns">
+    <span id="msg"></span>
+    <button id="cancel-btn">取消</button>
+    <button id="save-btn">保存</button>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

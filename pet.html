@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      background: transparent;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100vh;
+      user-select: none;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    /* 气泡不画在这儿了：桌宠窗口只有 200x200，宠物头顶只剩 52px，
+       两行以上的文案会被窗口上边缘裁掉（"气泡显示不全"）。
+       现在气泡由 main.js 显示在独立的"气泡窗口"里（bubble.html），这里只放宠物 */
+    #pet-img {
+      height: 130px;
+      width: auto;
+      -webkit-user-drag: none;
+      cursor: grab;
+      filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+      animation: bob 3s ease-in-out infinite;
+      transition: transform 0.15s;
+      z-index: 1;
+    }
+    #pet-img:hover {
+      transform: scale(1.08);
+      animation-play-state: paused;
+    }
+    /* === 睡觉状态：长时间没人理会 === */
+    #pet-img.sleeping {
+      filter: brightness(0.72) saturate(0.55);
+      animation: sleep-breathe 3.2s ease-in-out infinite;
+      cursor: default;
+    }
+    @keyframes sleep-breathe {
+      0%, 100% { transform: translateY(0) scale(1, 1); }
+      50%      { transform: translateY(2px) scale(1.04, 0.94); }
+    }
+    /* 动作播放时必须运行，否则会被上面 :hover 的 paused 卡住 */
+    #pet-img.hop,
+    #pet-img.roll,
+    #pet-img.tilt,
+    #pet-img.squish,
+    #pet-img.shake,
+    #pet-img.sleeping,
+    #pet-img.idle-hop,
+    #pet-img.idle-look {
+      animation-play-state: running;
+    }
+    #pet-img.dragging {
+      cursor: grabbing;
+      transform: scale(1.15) rotate(-4deg);
+      animation-play-state: paused;
+    }
+    #pet-img.clicking {
+      animation: wiggle 0.45s ease-in-out;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(0); }
+      25%      { transform: rotate(-8deg) scale(1.06); }
+      75%      { transform: rotate(8deg) scale(1.06); }
+    }
+
+    /* === 摸摸头互动动作（悬停随机触发） === */
+    #pet-img.hop    { animation: hop 0.6s cubic-bezier(0.28, 1.6, 0.4, 1); }
+    #pet-img.roll   { animation: roll 0.8s ease-in-out; }
+    #pet-img.tilt   { animation: tilt 0.65s ease-in-out; }
+    #pet-img.squish { animation: squish 0.55s ease-in-out; }
+    #pet-img.shake  { animation: shake 0.55s ease-in-out; }
+    @keyframes hop {
+      0%, 100% { transform: translateY(0) scale(1); }
+      30%      { transform: translateY(-26px) scaleY(1.08); }
+      50%      { transform: translateY(-26px); }
+      70%      { transform: translateY(0) scaleY(0.92) scaleX(1.08); }
+      85%      { transform: translateY(-5px) scale(1); }
+    }
+    @keyframes roll {
+      0%   { transform: rotate(0) translateY(0); }
+      15%  { transform: rotate(-14deg) translateY(-4px); }
+      40%  { transform: rotate(14deg) translateY(-8px); }
+      65%  { transform: rotate(-10deg) translateY(-4px); }
+      85%  { transform: rotate(6deg) translateY(0); }
+      100% { transform: rotate(0) translateY(0); }
+    }
+    @keyframes tilt {
+      0%, 100% { transform: rotate(0); }
+      35%      { transform: rotate(-10deg) scale(1.05); }
+      70%      { transform: rotate(7deg) scale(1.05); }
+    }
+    @keyframes squish {
+      0%, 100% { transform: scale(1); }
+      40%      { transform: scale(1.12, 0.88); }
+      65%      { transform: scale(0.96, 1.06); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%      { transform: translateX(-5px) rotate(-3deg); }
+      40%      { transform: translateX(5px) rotate(3deg); }
+      60%      { transform: translateX(-4px) rotate(-2deg); }
+      80%      { transform: translateX(3px) rotate(2deg); }
+    }
+
+    /* === 发呆时的小动作 === */
+    #pet-img.idle-hop  { animation: idle-hop 0.45s ease-in-out; }
+    #pet-img.idle-look { animation: idle-look 1s ease-in-out; }
+    @keyframes idle-hop {
+      0%, 100% { transform: translateY(0); }
+      45%      { transform: translateY(-9px); }
+      70%      { transform: translateY(0) scaleY(0.95); }
+    }
+    @keyframes idle-look {
+      0%, 100% { transform: rotate(0); }
+      30%      { transform: rotate(-5deg) translateX(-3px); }
+      65%      { transform: rotate(4deg) translateX(3px); }
+    }
+
+    /* === 情绪粒子（爱心/音符/星星） === */
+    #fx-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 3;
+    }
+    .fx {
+      position: absolute;
+      font-size: 17px;
+      animation: float-up 1.15s ease-out forwards;
+      will-change: transform, opacity;
+    }
+    @keyframes float-up {
+      from { opacity: 1; transform: translateY(0) scale(0.6) rotate(0); }
+      30%  { opacity: 1; }
+      to   { opacity: 0; transform: translateY(-75px) scale(1.25) rotate(18deg); }
+    }
+  </style>
+</head>
+<body>
+  <img id="pet-img" src="assets/pet.png" alt="噜噜" draggable="false">
+  <div id="fx-layer"></div>
+<!-- 共享音频工具（录音 → WAV），必须在 pet.js 之前加载 -->
+  <script src="voice-utils.js"></script>
+  <script src="pet.js"></script>
+</body>
+</html>

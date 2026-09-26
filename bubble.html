@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <!-- 气泡窗口：只负责显示一句话，什么时候显示/显示在哪儿全由 main.js 决定。
+       它从创建起就是"点击穿透"（setIgnoreMouseEvents(true)），所以永远不会挡住桌面上的点击；
+       又因为它根本不需要接收鼠标事件，也就不依赖 Electron 的 forward 转发（那个行为很挑时机）。
+       窗口比气泡大一圈，气泡贴着底边往上长：底边正好落在宠物头顶上方一点。 -->
+  <style>
+    body {
+      margin: 0;
+      background: transparent;
+      overflow: hidden;
+      height: 100vh;
+      box-sizing: border-box;
+      padding-bottom: 8px; /* 留给下面的小尾巴 */
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      user-select: none;
+      font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+    #bubble-wrap {
+      position: relative;      /* 小尾巴的定位参照 */
+      max-width: 440px;        /* 窗口宽 460，左右各留 10px */
+    }
+    #bubble {
+      box-sizing: border-box;
+      max-height: 126px;       /* 最多约 6 行；再长的文案 main.js 会先截断 */
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 12px;
+      padding: 9px 14px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #333;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      word-break: break-word;
+      white-space: pre-wrap;
+      transform-origin: 50% 100%;
+      animation: bubble-in 0.25s ease-out;
+    }
+    /* 小尾巴指向下面的宠物 */
+    #bubble-wrap::after {
+      content: "";
+      position: absolute;
+      bottom: -7px;
+      left: 50%;
+      margin-left: -7px;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 8px solid rgba(255, 255, 255, 0.96);
+    }
+    @keyframes bubble-in {
+      from { opacity: 0; transform: translateY(6px) scale(0.92); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div id="bubble-wrap"><div id="bubble"></div></div>
+  <script>
+    const bubble = document.getElementById('bubble');
+
+    // 主进程发来一句话 → 显示并重播入场动画（什么时候消失由主进程控制）
+    window.petAPI.onShowBubble((text) => {
+      bubble.textContent = text;
+      // 重播动画：清掉 animation 触发一次重排再加回来
+      bubble.style.animation = 'none';
+      void bubble.offsetHeight;
+      bubble.style.animation = '';
+    });
+  </script>
+</body>
+</html>

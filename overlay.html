@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; background: transparent; overflow: hidden; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; }
+    canvas { display: block; }
+    .hidden { display: none !important; }
+
+    /* ---------- 补充描述输入框 ---------- */
+    #note-box {
+      position: absolute; width: 340px; z-index: 10;
+      background: #ffffff; border: 2px solid #00ff88; border-radius: 10px;
+      padding: 10px 12px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+    }
+    #note-box .title { font-size: 13px; font-weight: 600; color: #00331f; margin-bottom: 6px; }
+    #note-input {
+      width: 100%; box-sizing: border-box; resize: none; outline: none;
+      border: 1px solid #ccc; border-radius: 6px; padding: 6px 8px;
+      font-size: 13px; font-family: inherit; line-height: 1.5;
+    }
+    #note-input:focus { border-color: #00c873; }
+    .hint { font-size: 11px; color: #999; margin-top: 6px; text-align: right; }
+
+    /* ---------- AI 回答 / 追问 聊天卡片 ---------- */
+    #chat {
+      position: absolute; width: 440px; z-index: 10;
+      background: #ffffff; border: 2px solid #00ff88; border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      display: flex; flex-direction: column;
+    }
+    #chat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px; border-bottom: 1px solid #eee;
+      cursor: move; user-select: none;
+    }
+    #chat-title { font-size: 13px; font-weight: 600; color: #00885a; }
+    #chat-title::after { content: " ⠿ 按住可拖动"; font-weight: 400; color: #b5c9bf; font-size: 11px; }
+    #chat-close { cursor: pointer; color: #999; font-size: 14px; padding: 0 4px; user-select: none; }
+    #chat-close:hover { color: #333; }
+    #chat-messages {
+      max-height: 320px; overflow-y: auto; padding: 10px 12px;
+      user-select: text; cursor: text;
+    }
+    .msg { font-size: 13px; line-height: 1.65; margin-bottom: 10px; white-space: pre-wrap; word-break: break-word; color: #111; }
+    .msg.user { background: #f1f5f3; border-radius: 8px; padding: 6px 10px; color: #333; }
+    .msg.thinking { color: #999; font-style: italic; }
+    /* 流式输出中的打字机光标 */
+    .msg.streaming::after { content: "▌"; color: #00c873; animation: caret-blink 0.8s steps(1) infinite; }
+    @keyframes caret-blink { 50% { opacity: 0; } }
+    .ai-tools { text-align: right; margin-bottom: 2px; }
+    .copy-btn {
+      display: inline-block; font-size: 11px; color: #00a05e; cursor: pointer; user-select: none;
+      border: 1px solid #bfe8d6; background: #f2fbf7; border-radius: 4px; padding: 1px 8px;
+    }
+    .copy-btn:hover { background: #dff5ea; }
+    #chat-input-row { display: flex; gap: 6px; padding: 8px 12px; border-top: 1px solid #eee; }
+    #chat-input {
+      flex: 1; border: 1px solid #ccc; border-radius: 6px; padding: 6px 8px;
+      font-size: 13px; font-family: inherit; outline: none;
+    }
+    #chat-input:focus { border-color: #00c873; }
+    #chat-send {
+      border: none; background: #00c873; color: #fff; border-radius: 6px;
+      padding: 0 14px; font-size: 13px; cursor: pointer; font-family: inherit;
+    }
+    #chat-send:hover { background: #00b368; }
+    #chat-send:disabled { background: #9adfc4; cursor: default; }
+    /* 麦克风按钮：正常灰色，录音中变红闪烁 */
+    .mic-btn {
+      border: none; background: #eef3f0; color: #666; border-radius: 6px;
+      width: 32px; cursor: pointer; font-size: 14px; font-family: inherit;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; user-select: none;
+    }
+    .mic-btn:hover { background: #dff5ea; color: #00a05e; }
+    .mic-btn.recording {
+      background: #ffe3e3; color: #d94a4a;
+      animation: mic-pulse 1s ease-in-out infinite;
+    }
+    .mic-btn.busy { opacity: 0.5; cursor: default; }
+    @keyframes mic-pulse {
+      50% { background: #ffbdbd; transform: scale(1.06); }
+    }
+    /* 录音状态条（麦克风按钮右侧的小提示） */
+    .note-tools { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+    .mic-status {
+      display: none; font-size: 11px; color: #d94a4a; text-align: right; flex: 1;
+    }
+    .mic-status.visible { display: block; }
+
+    /* 语音识别失败的提示：内联展示，不再用 alert 弹系统对话框挡住操作 */
+    .voice-error {
+      display: none; margin-top: 6px; padding: 6px 8px;
+      font-size: 11px; line-height: 1.55; color: #b53a3a;
+      background: #fff4f4; border: 1px solid #ffd5d5; border-radius: 6px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .voice-error.visible { display: block; }
+    .voice-error .link { color: #00a05e; cursor: pointer; text-decoration: underline; white-space: nowrap; }
+    .voice-error .link:hover { color: #00885a; }
+    .msg.error {
+      color: #b53a3a; background: #fff4f4; border: 1px solid #ffd5d5;
+      border-radius: 8px; padding: 6px 10px;
+    }
+    .msg.error .link { color: #00a05e; cursor: pointer; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <canvas id="overlay"></canvas>
+
+  <!-- 框选完成后的补充描述输入框 -->
+  <div id="note-box" class="hidden">
+    <div class="title">补充描述这个问题（可选）</div>
+    <textarea id="note-input" rows="2" placeholder="例如：只要第 2 小题 / 翻译成中文 / 解释一下报错原因…"></textarea>
+    <div class="note-tools">
+      <button id="note-mic" class="mic-btn" title="语音补充描述（点击开始，再点一次结束）">🎤</button>
+      <span class="mic-status" id="note-mic-status">正在聆听，再次点击 🎤 结束…</span>
+    </div>
+    <div class="voice-error" id="note-error">
+      <span id="note-error-text"></span><span class="link" id="note-error-settings">打开 API 设置 ›</span>
+    </div>
+    <div class="hint">回车开始分析 · Shift+回车换行 · Esc 取消</div>
+  </div>
+
+  <!-- AI 回答 + 继续追问的聊天卡片 -->
+  <div id="chat" class="hidden">
+    <div id="chat-header">
+      <span id="chat-title">AI 回答 · 文字可选中复制</span>
+      <span id="chat-close" title="关闭并返回框选">✕</span>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <input id="chat-input" type="text" placeholder="继续追问，回车发送…">
+      <button id="chat-mic" class="mic-btn" title="语音追问（点击开始，再点一次结束）">🎤</button>
+      <button id="chat-send">发送</button>
+    </div>
+  </div>
+
+// 共享音频工具（录音 → WAV），必须在 overlay.js 之前加载
+  <script src="voice-utils.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# Desk Pet 后端依赖（Python 3.9+）
+# 安装：pip install -r requirements.txt
+fastapi>=0.110.0
+uvicorn>=0.27.0
+httpx>=0.27.0
+
+# 可选：只用于把「框选区域」从整屏截图里裁出来再发给模型（省 token）。
+# 不装也能正常用，后端会自动退回整图分析。
+Pillow>=10.0.0
